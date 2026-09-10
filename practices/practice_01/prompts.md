@@ -4,8 +4,8 @@
 
 | ID | Артефакт и цель | Инструмент / модель | Тип промпта | Запрос или ссылка на него | Результат или ссылка | Что приняли | Что отклонили или исправили | Как проверили |
 |---|---|---|---|---|---|---|---|---|
-| P1-01 | Baseline-ревью `TRAINING_PR.diff` |  | zero-shot |  |  |  |  |  |
-| P1-02 | Повторное ревью с master prompt |  | master prompt |  |  |  |  |  |
+| P1-01 | Baseline-ревью `TRAINING_PR.diff` | OpenCode (openai/gpt-5) | zero-shot | practices/practice_01/TRAINING_PR.diff | Основные проблемы:<br>- Нет валидации тела запроса, возможен KeyError -> 500 вместо 422 (app/api.py:35-38).<br>- Использование dict[str, str] требует Python 3.9+, риск падения на 3.8 (app/api.py:36; app/review_service.py:19).<br>- Синхронный обработчик вызывает LLM синхронно — риск блокировки event loop (app/api.py:35-38).<br>- Нет обработки ошибок/таймаутов LLM — любые исключения дадут 500.<br>- Нет схемы ответа/response model, поле comment не задокументировано — риск несовместимости клиентов.<br>- Нет ограничений на размер diff, риск DoS и prompt injection (app/review_service.py:19-22; app/api.py:35-38). | Принято как проблемы: (1) валидация и 422, (2) совместимость типов с Python<3.9, (3) синхронность/блокировка, (4) обработка ошибок/таймауты, (5) явная схема ответа, (6) лимиты/санитизация diff. | Отклонено как несущественное: стиль метода в Protocol (перенос '...' в тело) — не баг; строка промпта с переносом — ок. | По diff: app/api.py:35-38 и app/review_service.py:19-22. Проверка: POST /api/reviews без поля diff -> ожидаемый KeyError и 500 (например, curl -X POST -H "Content-Type: application/json" -d "{}" /api/reviews). Совместимость типов: dict[...] — PEP 585, работает с Python>=3.9; на 3.8 импорт упадет. Поведение FastAPI: без модели тела — нет 422 по схеме, KeyError не перехвачен. |
+| P1-02 | Повторное ревью с master prompt | OpenCode (openai/gpt-5) | master prompt | См. раздел |
 | P1-03 |  |  |  |  |  |  |  |  |
 
 ## Master Prompt v1
