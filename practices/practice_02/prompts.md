@@ -7,8 +7,8 @@
 | Техника | Файл эксперимента | Изменённый файл Практики 1 | Конкретное изменение | Проверка | Что отклонили |
 |---|---|---|---|---|---|
 | Few-shot | [`few_shot/experiment.md`](few_shot/experiment.md) |  |  |  |  |
-| R.C.T.F. | [`rctf/experiment.md`](rctf/experiment.md) |  |  |  |  |
-| Chain of Verification | [`chain_of_verification/experiment.md`](chain_of_verification/experiment.md) |  |  |  |  |
+| R.C.T.F. | [`rctf/experiment.md`](rctf/experiment.md) | practices/practice_01/adr.md | Уточнить SEC-1 (включить пароли и приватные ключи), задать контролируемый ответ по OUT-1 при таймауте (REL-1), жёсткая валидация/обрезка `risks` до 3 и требование точного `evidence` (OUT-1/QA-1), явный запрет логирования diff/ответа (OBS-1), явное ограничение полномочий (SCOPE-1). | Интеграционные/юнит проверки: таймаут -> валидный OUT-1; маскировка секретов -> [REDACTED]; схема и тримминг `risks`; отсутствие diff/ответа в логах. | Очереди, стриминг, rate limiting, аутентификация, RAG по шаблонам секретов. |
+| Chain of Verification | [`chain_of_verification/experiment.md`](chain_of_verification/experiment.md) | practices/practice_01/adr.md | Точечные правки формулировок для соответствия CASE: термин "маскирование секретов" и паттерны; API контракт (POST, application/json, 415/422/413); отсутствие ретраев и деградация только в summary; постпроцессинг OUT-1 (обрезка risks до 3, нормализация, детерминирование порядка); строгий критерий evidence; запреты OBS-1; однозначный статус ADR. | Набор проверок по CASE: negative/edge cases для API кодов; тесты SEC-1 на паттерны -> [REDACTED] без изменения структуры; таймаут LLM <=10с -> валидный OUT-1 без ретраев; валидация схемы и постпроцессинг risks; инспекция логов и промпта на соблюдение OBS-1. | Нефункциональные расширения: очереди, ретраи, стриминг, интеграции, rate limiting, auth, RAG. |
 | Tree of Thoughts | [`tree_of_thoughts/experiment.md`](tree_of_thoughts/experiment.md) |  |  |  |  |
 | RAG | [`rag/experiment.md`](rag/experiment.md) |  |  |  |  |
 | ReAct | [`react/experiment.md`](react/experiment.md) |  |  |  |  |
