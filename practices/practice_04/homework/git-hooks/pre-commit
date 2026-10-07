@@ -1,0 +1,4 @@
+#!/bin/sh
+set -eu
+root=$(git rev-parse --show-toplevel)
+exec python3 "$root/practices/practice_04/homework/scripts/style_check.py" --staged
