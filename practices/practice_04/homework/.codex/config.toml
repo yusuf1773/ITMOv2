@@ -1,0 +1,7 @@
+[mcp_servers.cp-tasks]
+command = "/usr/bin/python3"
+args = ["/home/yusuf1773/itmo_projects/ITMOv2/practices/practice_04/homework/mcp/cp_tasks_mcp.py"]
+startup_timeout_sec = 10
+tool_timeout_sec = 3600
+[projects."/home/yusuf1773/itmo_projects/ITMOv2/practices/practice_04/homework"]
+trust_level = "trusted"
