@@ -1,0 +1,8 @@
+{
+  "task-01": {"correct": ["g6", "g7", null], "illegal": ["a1", "a2", null]},
+  "task-02": {"correct": ["b6", "b7", null], "illegal": ["h1", "h2", null]},
+  "task-03": {"correct": ["g3", "g2", null], "illegal": ["a8", "a7", null]},
+  "task-04": {"correct": ["b3", "b2", null], "illegal": ["h8", "h7", null]},
+  "task-05": {"correct": ["a7", "a8", "q"], "promotion": ["a7", "a8", null]}
+}
+
