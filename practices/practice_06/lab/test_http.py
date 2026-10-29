@@ -55,6 +55,15 @@ class HttpTest(unittest.TestCase):
     def test_transport_only_binds_loopback(self):
         self.assertEqual(self.server.server_address[0], "127.0.0.1")
 
+    def test_bad_json_does_not_reveal_server_exception(self):
+        request = Request(self.base + "/login", data=b"{", method="POST",
+                          headers={"Content-Type": "application/json"})
+        with self.assertRaises(HTTPError) as error:
+            urlopen(request, timeout=5)
+        with error.exception as response:
+            self.assertEqual(response.status, 400)
+            self.assertNotIn("JSONDecodeError", response.read().decode())
+
 
 if __name__ == "__main__":
     unittest.main()
