@@ -1,0 +1,30 @@
+:root { color-scheme: light; font-family: Inter, system-ui, sans-serif; color: #17221b; background: #f4f0e6; }
+* { box-sizing: border-box; }
+body { margin: 0; min-width: 320px; min-height: 100vh; background: radial-gradient(circle at top, #fffaf0 0, #e6ede3 70%); }
+button { font: inherit; }
+.trainer { width: min(100% - 24px, 680px); margin: 0 auto; padding: 28px 0 40px; }
+header { margin-bottom: 16px; }
+.eyebrow { margin: 0 0 4px; color: #4a6854; font-size: .78rem; font-weight: 750; letter-spacing: .12em; text-transform: uppercase; }
+h1 { margin: 0; font-family: Georgia, serif; font-size: clamp(2rem, 8vw, 3.5rem); line-height: 1; }
+.meta { display: flex; flex-wrap: wrap; gap: 8px 18px; margin-top: 12px; color: #3f5145; font-weight: 650; }
+.board { display: grid; grid-template-columns: repeat(8, 1fr); width: 100%; aspect-ratio: 1; overflow: hidden; border: 6px solid #25372b; border-radius: 8px; box-shadow: 0 18px 35px #1e2f2430; }
+.square { position: relative; display: grid; place-items: center; min-width: 0; border: 0; padding: 0; font-family: "Segoe UI Symbol", "Noto Sans Symbols", serif; font-size: clamp(1.6rem, 9vw, 4rem); line-height: 1; cursor: pointer; text-shadow: 0 1px 1px #fff8; }
+.square.light { background: #e8d9b7; }
+.square.dark { background: #75936f; }
+.square:hover:not(:disabled) { filter: brightness(1.08); }
+.square:focus-visible { z-index: 2; outline: 4px solid #f3a712; outline-offset: -4px; }
+.square.selected { box-shadow: inset 0 0 0 5px #f3a712; }
+.square:disabled { cursor: default; opacity: 1; }
+.coordinate { position: absolute; left: 3px; bottom: 2px; font: 600 clamp(.48rem, 1.7vw, .72rem)/1 system-ui, sans-serif; color: #17221baa; text-shadow: none; }
+.feedback { min-height: 142px; padding: 18px 4px 0; }
+.status, .error { min-height: 1.4em; margin: 0 0 6px; font-weight: 700; }
+.status { color: #205d35; }
+.error { color: #9b2f28; }
+.promotion { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.promotion p { flex-basis: 100%; margin: 6px 0 0; font-weight: 700; }
+.promotion button, .actions button { min-height: 44px; border: 1px solid #435b49; border-radius: 7px; padding: 9px 14px; background: #fff; color: #17221b; cursor: pointer; }
+.actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px; margin-top: 12px; }
+.actions .primary { background: #263d2e; color: white; }
+button:disabled { cursor: default; opacity: .55; }
+@media (max-width: 420px) { .trainer { width: min(100% - 16px, 680px); padding-top: 18px; } .board { border-width: 4px; } .actions button { flex: 1 1 150px; } }
+

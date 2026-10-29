@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Мат в один ход</title>
+  <link rel="stylesheet" href="/static/ui/styles.css">
+</head>
+<body>
+  <main class="trainer">
+    <header>
+      <p class="eyebrow">Шахматный тренажёр</p>
+      <h1>Мат в один ход</h1>
+      <div class="meta"><span id="task-id">Загрузка задач</span><span id="side-to-move"></span></div>
+    </header>
+    <section aria-label="Шахматная позиция">
+      <div id="board" class="board" role="grid" aria-label="Шахматная доска"></div>
+    </section>
+    <section class="feedback" aria-label="Результат">
+      <p id="status" class="status" aria-live="polite"></p>
+      <p id="error" class="error" aria-live="assertive"></p>
+      <div id="promotion" class="promotion" aria-live="polite"></div>
+      <div class="actions">
+        <button id="retry" type="button" hidden>Повторить</button>
+        <button id="next-task" class="primary" type="button" disabled>Следующая задача</button>
+      </div>
+    </section>
+  </main>
+  <script type="module" src="/static/ui/js/app.js"></script>
+</body>
+</html>
+

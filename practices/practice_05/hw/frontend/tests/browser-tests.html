@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="ru">
+<head><meta charset="utf-8"><title>UI checks</title><link rel="stylesheet" href="../styles.css"></head>
+<body>
+  <main class="trainer">
+    <p id="task-id"></p><p id="side-to-move"></p>
+    <div id="board" class="board"></div>
+    <p id="status"></p><p id="error"></p><div id="promotion"></div>
+    <button id="retry" hidden>Повторить</button><button id="next-task">Следующая задача</button>
+    <pre id="results" aria-live="polite">Проверки выполняются…</pre>
+  </main>
+  <script type="module" src="./browser-tests.js"></script>
+</body>
+</html>
+
