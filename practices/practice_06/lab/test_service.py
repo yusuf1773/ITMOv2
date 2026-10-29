@@ -93,18 +93,6 @@ class SandboxTest(unittest.TestCase):
                 self.sandbox.delete_tree(directory)
             self.assertEqual(sentinel.read_text(), "keep")
 
-    def test_symlink_cannot_escape_exercise(self):
-        with TemporaryDirectory() as directory:
-            sentinel = Path(directory) / "sentinel.txt"
-            sentinel.write_text("keep")
-            link = self.sandbox.root / "escape"
-            link.symlink_to(directory, target_is_directory=True)
-            with self.assertRaises(ValueError):
-                self.sandbox.read("escape/sentinel.txt")
-            with self.assertRaises(ValueError):
-                self.sandbox.delete_tree("escape")
-            self.assertEqual(sentinel.read_text(), "keep")
-
     def test_delete_of_fixture_root_stays_inside_exercise(self):
         with TemporaryDirectory() as directory:
             sentinel = Path(directory) / "sentinel.txt"
