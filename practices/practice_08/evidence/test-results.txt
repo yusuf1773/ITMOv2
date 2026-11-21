@@ -1,0 +1,9 @@
+$ vitest run
+
+ RUN  v5.1.1 /home/yusuf1773/itmo_projects/ITMOv2/practices/practice_08
+
+
+ Test Files  6 passed (6)
+      Tests  10 passed (10)
+   Start at  17:30:38
+   Duration  1.26s (environment 39%, tests 39%, setup 11%, import 9%, transform 1%)

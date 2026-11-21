@@ -54,6 +54,7 @@ it('не сохраняет результат повторно при нажа�
   const save = vi.spyOn(storage, 'saveResult').mockImplementation(() => new Promise(resolve => { finishSave = resolve }))
   await user.click(screen.getByRole('button', { name: 'Продолжить →' }))
   await waitFor(() => expect(save).toHaveBeenCalledTimes(1))
+  expect(screen.getByText('Сохраняем прогресс…')).toBeInTheDocument()
   const back = screen.getByRole('button', { name: 'Вернуться к курсу' })
   expect(back).toBeDisabled()
   await user.dblClick(back)
