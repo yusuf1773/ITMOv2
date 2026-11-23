@@ -1,0 +1,464 @@
+{
+  "name": "7.2 WF2 - sub_send_issue_report (звёздочка)",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "owner"
+            },
+            {
+              "name": "repo"
+            },
+            {
+              "name": "email"
+            }
+          ]
+        }
+      },
+      "id": "7abf5788-fe22-4bc5-b3fb-9d462dfdc9bd",
+      "name": "Вход: owner, repo и email",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -144,
+        -256
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const config = $input.first().json;\nconst owner = typeof config.owner === 'string' ? config.owner.trim() : '';\nconst repo = typeof config.repo === 'string' ? config.repo.trim() : '';\nif (!/^[A-Za-z0-9-]+$/.test(owner) || !/^[A-Za-z0-9_.-]+$/.test(repo) || repo === '.' || repo === '..') {\n  throw new Error('Укажите отдельные имена owner и repo');\n}\nconst email = typeof config.email === 'string' ? config.email.trim() : '';\nconst [local, domain, extra] = email.split('@');\nconst localPattern = /^[A-Za-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\\.[A-Za-z0-9!#$%&'*+/=?^_`{|}~-]+)*$/;\nconst domainPattern = /^(?:[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?\\.)+(?:[A-Za-z]{2,63}|xn--[A-Za-z0-9-]{1,58}[A-Za-z0-9])$/;\nif (extra !== undefined || !domain || email.length > 254 ||\n    local.length > 64 || !localPattern.test(local) || !domainPattern.test(domain)) {\n  throw new Error('Передайте корректный email получателя');\n}\nreturn [{json: {owner, repo, email}}];"
+      },
+      "id": "775d8a01-590b-4519-a877-73bf6e6d0c19",
+      "name": "Проверить параметры",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        96,
+        -256
+      ]
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "SXpRjB4VZNgcaCtA",
+          "mode": "list",
+          "cachedResultName": "7.2 WF2 - sub_issue_statistics",
+          "cachedResultUrl": "/workflow/SXpRjB4VZNgcaCtA"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "owner": "={{ $json.owner }}",
+            "repo": "={{ $json.repo }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "owner",
+              "displayName": "owner",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "repo",
+              "displayName": "repo",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "id": "d7969f15-7f98-40e1-bb5c-5de1382f087c",
+      "name": "Получить статистику",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        336,
+        -256
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const stats = $input.first().json;\nconst from = new Date(stats.period?.from);\nconst to = new Date(stats.period?.to);\nconst names = ['created', 'closed', 'updated', 'needsTriage'];\nif (!stats.repository || !stats.period?.text || !(to > from) || !Array.isArray(stats.rows) ||\n    !names.every(name => Number.isSafeInteger(stats.counts?.[name]) && stats.counts[name] >= 0)) {\n  throw new Error('Sub-workflow не вернул статистику в ожидаемом формате');\n}\nconst dateParts = new Intl.DateTimeFormat('en-CA', {\n  timeZone: 'Europe/Moscow', year: 'numeric', month: '2-digit', day: '2-digit',\n}).formatToParts(to);\nconst date = Object.fromEntries(dateParts.map(({type, value}) => [type, value]));\nconst monday = new Date(Date.UTC(+date.year, +date.month - 1, +date.day));\nmonday.setUTCDate(monday.getUTCDate() - (monday.getUTCDay() + 6) % 7);\nconst week_key = monday.toISOString().slice(0, 10);\nmonday.setUTCDate(monday.getUTCDate() - 7);\nconst previous_week = monday.toISOString().slice(0, 10);\nconst repository = stats.repository.toLowerCase();\nconst snapshot = {\n  repository, week_key, period_from: from.toISOString(), period_to: to.toISOString(),\n  created: stats.counts.created, closed: stats.counts.closed,\n  updated: stats.counts.updated, needs_triage: stats.counts.needsTriage,\n};\nreturn [{json: {stats, snapshot, previous_week}}];"
+      },
+      "name": "Подготовить сводку",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        576,
+        -256
+      ],
+      "id": "77b894db-7486-44d8-83f7-dbf858a7d5c2"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "name",
+          "value": "weekly_issue_reports"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "repository",
+              "keyValue": "={{ $json.snapshot.repository }}"
+            },
+            {
+              "keyName": "week_key",
+              "keyValue": "={{ $json.previous_week }}"
+            }
+          ]
+        },
+        "limit": 1
+      },
+      "name": "Найти сводку прошлой недели",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        816,
+        -256
+      ],
+      "id": "b357a3d3-03f6-4c97-85cf-b716cbb055b0",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const {stats, snapshot, previous_week} = $('Подготовить сводку').first().json;\nconst row = $input.first().json;\nconst metrics = ['created', 'closed', 'updated', 'needs_triage'];\nconst previous = row.week_key === previous_week && row.repository === snapshot.repository\n  ? Object.fromEntries(metrics.map(key => [key, row[key]]))\n  : null;\nif (previous && !metrics.every(key => Number.isSafeInteger(previous[key]) && previous[key] >= 0)) {\n  throw new Error('Проверьте числовые поля в сводке прошлой недели');\n}\nconst current = Object.fromEntries(metrics.map(key => [key, snapshot[key]]));\nconst changes = previous\n  ? Object.fromEntries(metrics.map(key => [key, current[key] - previous[key]]))\n  : null;\nreturn [{json: {stats, snapshot, comparison: {current, previous, changes}}}];"
+      },
+      "name": "Посчитать изменения",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1056,
+        -256
+      ],
+      "id": "f75d023e-795d-4a11-90e9-dff20f9a648a"
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "name",
+          "value": "weekly_issue_reports"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "repository",
+              "keyValue": "={{ $json.snapshot.repository }}"
+            },
+            {
+              "keyName": "week_key",
+              "keyValue": "={{ $json.snapshot.week_key }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "repository": "={{ $json.snapshot.repository }}",
+            "week_key": "={{ $json.snapshot.week_key }}",
+            "period_from": "={{ $json.snapshot.period_from }}",
+            "period_to": "={{ $json.snapshot.period_to }}",
+            "created": "={{ $json.snapshot.created }}",
+            "closed": "={{ $json.snapshot.closed }}",
+            "updated": "={{ $json.snapshot.updated }}",
+            "needs_triage": "={{ $json.snapshot.needs_triage }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "repository",
+              "displayName": "repository",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "week_key",
+              "displayName": "week_key",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "period_from",
+              "displayName": "period_from",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "period_to",
+              "displayName": "period_to",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "created",
+              "displayName": "created",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "closed",
+              "displayName": "closed",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "updated",
+              "displayName": "updated",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "needs_triage",
+              "displayName": "needs_triage",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "name": "Сохранить сводку",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1296,
+        -256
+      ],
+      "id": "e64e5515-ed81-4f9b-b265-2f9dba7b8101"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Напиши короткий комментарий к недельной статистике GitHub Issues на русском, 1–2 предложения простым текстом. Поля: created — создано, closed — закрыто, updated — обновлено, needs_triage — новые с needs-triage. Используй только переданные цифры и готовые изменения. Не выдумывай причины. Если previous равно null, кратко опиши текущую неделю и скажи, что сравнение пока недоступно.\nДанные: {{ JSON.stringify($('Посчитать изменения').first().json.comparison) }}"
+      },
+      "name": "AI-комментарий недели",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.4,
+      "position": [
+        1536,
+        -256
+      ],
+      "id": "021e4473-5b3f-4565-8d96-0de49aa26cd7",
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "openai/gpt-5",
+          "mode": "list",
+          "cachedResultName": "openai/gpt-5"
+        },
+        "options": {
+          "temperature": 0
+        }
+      },
+      "name": "OpenAI для комментария",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        1536,
+        -16
+      ],
+      "id": "0640c0fb-f807-4e2a-943b-a7a3ac4ddc4e"
+    },
+    {
+      "parameters": {
+        "jsCode": "const {stats, comparison} = $('Посчитать изменения').first().json;\nconst output = $input.first().json.text;\nconst commentary = typeof output === 'string' && output.trim()\n  ? output.trim()\n  : 'AI-комментарий недоступен.';\nconst formatChange = key => {\n  const count = comparison.current[key];\n  if (!comparison.changes) return String(count);\n  const change = comparison.changes[key];\n  return count + ' (' + (change > 0 ? '+' : '') + change + ')';\n};\nconst escapeHtml = value => String(value).replace(/[&<>\"']/g, character => ({\n  '&': '&amp;', '<': '&lt;', '>': '&gt;', '\"': '&quot;', \"'\": '&#39;'\n}[character]));\nif (!stats.period?.text || !stats.counts || !Array.isArray(stats.rows)) {\n  throw new Error('Sub-workflow не вернул статистику в ожидаемом формате');\n}\nconst body = stats.rows.length\n  ? stats.rows.map(row => '<tr><td>' + escapeHtml(row.type) +\n      '</td><td>' + escapeHtml(row.author) + '</td><td>' +\n      Number(row.count) + '</td></tr>').join('')\n  : '<tr><td colspan=\"3\">Новых Issues за неделю нет</td></tr>';\nconst html = '<!doctype html><html lang=\"ru\"><body>' +\n  '<h2>Issues за ' + escapeHtml(stats.period.text) + '</h2>' +\n  '<p>Репозиторий: ' + escapeHtml(stats.repository) + '</p>' +\n  '<p>Создано: ' + formatChange('created') + '; закрыто: ' + formatChange('closed') +\n  '; обновлено: ' + formatChange('updated') +\n  '; новых с needs-triage: ' + formatChange('needs_triage') + '.</p>' +\n  (comparison.changes ? '' : '<p>Нет данных для сравнения с прошлой неделей.</p>') +\n  '<table border=\"1\" cellpadding=\"6\" cellspacing=\"0\">' +\n  '<thead><tr><th>Тип</th><th>Автор</th><th>Количество</th></tr></thead>' +\n  '<tbody>' + body + '</tbody></table>' +\n  '<h3>AI-комментарий недели</h3><p>' + escapeHtml(commentary) + '</p></body></html>';\nreturn [{json: {subject: 'Еженедельная статистика Issues — ' + stats.period.text, html}}];"
+      },
+      "id": "bf6a8fc7-6737-48b8-b749-cc3fad5862bc",
+      "name": "Подготовить письмо",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1776,
+        -256
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Проверить параметры').first().json.email }}",
+        "subject": "={{ $json.subject }}",
+        "message": "={{ $json.html }}",
+        "options": {}
+      },
+      "id": "9a4103ac-b487-4f35-8190-a2a956f579f4",
+      "name": "Отправить HTML-отчёт",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        2016,
+        -256
+      ]
+    }
+  ],
+  "connections": {
+    "Вход: owner, repo и email": {
+      "main": [
+        [
+          {
+            "node": "Проверить параметры",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Проверить параметры": {
+      "main": [
+        [
+          {
+            "node": "Получить статистику",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Получить статистику": {
+      "main": [
+        [
+          {
+            "node": "Подготовить сводку",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Подготовить сводку": {
+      "main": [
+        [
+          {
+            "node": "Найти сводку прошлой недели",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Найти сводку прошлой недели": {
+      "main": [
+        [
+          {
+            "node": "Посчитать изменения",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Посчитать изменения": {
+      "main": [
+        [
+          {
+            "node": "Сохранить сводку",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Сохранить сводку": {
+      "main": [
+        [
+          {
+            "node": "AI-комментарий недели",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI-комментарий недели": {
+      "main": [
+        [
+          {
+            "node": "Подготовить письмо",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI для комментария": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI-комментарий недели",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Подготовить письмо": {
+      "main": [
+        [
+          {
+            "node": "Отправить HTML-отчёт",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "active": false
+}

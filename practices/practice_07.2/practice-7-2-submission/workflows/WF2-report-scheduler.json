@@ -1,0 +1,156 @@
+{
+  "name": "7.2 WF2 - issue_report_schedule",
+  "nodes": [
+    {
+      "id": "3514a26f-d292-49a3-87ac-be2c4cadbe59",
+      "name": "Расписание отчёта",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 9 * * MON"
+            }
+          ]
+        }
+      },
+      "notes": "Укажи время запуска в поле Cron Expression. Часовой пояс задаётся в настройках workflow."
+    },
+    {
+      "id": "89fd4e06-38b9-48f7-871e-8888d920bc6e",
+      "name": "Параметры отчёта",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        240,
+        0
+      ],
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "0525944a-bdce-4b76-a815-e16f202b4e4b",
+              "name": "owner",
+              "value": "yusuf1773",
+              "type": "string"
+            },
+            {
+              "id": "eb799314-9c47-41fd-9940-2feee15cb875",
+              "name": "repo",
+              "value": "emulators_manager",
+              "type": "string"
+            },
+            {
+              "id": "1082f418-fbf3-4372-a463-f62a9069c79b",
+              "name": "email",
+              "value": "",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "59805249-6ba4-40a1-8d86-41e993582ffb",
+      "name": "Сформировать и отправить отчёт",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        480,
+        0
+      ],
+      "parameters": {
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "value": "gfTx1QCS9ANoZrbZ",
+          "mode": "list",
+          "cachedResultName": "7.2 WF2 - sub_send_issue_report (звёздочка)",
+          "cachedResultUrl": "/workflow/gfTx1QCS9ANoZrbZ"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "owner": "={{ $json.owner }}",
+            "repo": "={{ $json.repo }}",
+            "email": "={{ $json.email }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "owner",
+              "displayName": "owner",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "repo",
+              "displayName": "repo",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "mode": "once",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Расписание отчёта": {
+      "main": [
+        [
+          {
+            "node": "Параметры отчёта",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Параметры отчёта": {
+      "main": [
+        [
+          {
+            "node": "Сформировать и отправить отчёт",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Europe/Moscow"
+  },
+  "pinData": {}
+}
