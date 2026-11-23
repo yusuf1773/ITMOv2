@@ -1,0 +1,10 @@
+{
+  "description": "Изучайте татарский язык через уроки со словами, грамматикой и упражнениями, отслеживайте результаты и повторяйте пройденный материал.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}

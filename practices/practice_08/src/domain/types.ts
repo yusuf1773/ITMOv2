@@ -1,0 +1,9 @@
+export type Source = { label: string; url: string }
+export type Word = { id: string; tatar: string; russian: string; example: string; exampleTranslation: string; source: Source }
+export type Rule = { id: string; title: string; explanation: string; example: string; exampleTranslation: string; source: Source }
+export type Question = { id: string; itemId: string; type: 'choice' | 'input' | 'grammar'; prompt: string; subtitle: string; options?: string[]; accepted: string[]; explanation: string }
+export type Lesson = { id: string; title: string; description: string; words: Word[]; rule?: Rule; questions: Question[] }
+export type Answer = { questionId: string; itemId: string; given: string; correct: boolean; correctAnswer: string }
+export type SessionResult = { id: string; kind: 'lesson' | 'review' | 'free'; lessonId?: string; answers: Answer[] }
+export type ReviewState = { dueAt: number; intervalIndex: number; mistakes: number }
+export type Progress = { version: 1; completedLessonIds: string[]; review: Record<string, ReviewState>; appliedSessionIds: string[] }

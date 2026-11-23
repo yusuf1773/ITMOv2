@@ -1,0 +1,34 @@
+
+> figma-make-app@1.0.0 test:all
+> npm run test:run && npm run test:e2e
+
+
+> figma-make-app@1.0.0 test:run
+> vitest run
+
+
+ RUN  v5.1.1 /home/yusuf1773/itmo_projects/ITMOv2/practices/practice_08
+
+
+ Test Files  6 passed (6)
+      Tests  10 passed (10)
+   Start at  18:21:48
+   Duration  1.35s (environment 40%, tests 38%, setup 11%, import 10%, transform 1%)
+
+
+> figma-make-app@1.0.0 test:e2e
+> playwright test
+
+[WebServer] (node:28287) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 4 tests using 1 worker
+
+(node:28337) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  1 e2e/lesson.spec.ts:26:1 › урок сохраняется и открывает следующий после перезагрузки (4.3s)
+  ✓  2 e2e/lesson.spec.ts:40:1 › мобильный экран показывает пустое повторение и ошибки ответа (3.6s)
+  ✓  3 e2e/lesson.spec.ts:61:1 › ошибка сохранения оставляет результат и допускает повторную попытку (2.1s)
+  ✓  4 e2e/lesson.spec.ts:93:1 › ошибочный ответ возвращается в повторении один раз (1.9s)
+
+  4 passed (12.9s)
