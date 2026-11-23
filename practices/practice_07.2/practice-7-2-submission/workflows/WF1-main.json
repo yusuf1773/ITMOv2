@@ -1,0 +1,888 @@
+{
+  "name": "7.2 WF1 - обработка GitHub Issues",
+  "nodes": [
+    {
+      "parameters": {
+        "owner": {
+          "__rl": true,
+          "cachedResultName": "yusuf1773",
+          "cachedResultUrl": "https://github.com/yusuf1773",
+          "mode": "list",
+          "value": "yusuf1773"
+        },
+        "repository": {
+          "__rl": true,
+          "cachedResultName": "emulators_manager",
+          "cachedResultUrl": "https://github.com/yusuf1773/emulators_manager",
+          "mode": "list",
+          "value": "emulators_manager"
+        },
+        "events": [
+          "issues"
+        ],
+        "options": {}
+      },
+      "id": "98fe9d7b-a3d3-4bb6-ae3b-f1e5e3f7a8f0",
+      "name": "Github Trigger",
+      "position": [
+        -2080,
+        640
+      ],
+      "type": "n8n-nodes-base.githubTrigger",
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "190fb1a9-caa5-43ea-82f1-968996cf548f",
+              "leftValue": "={{ $json.body.action }}",
+              "operator": {
+                "operation": "equals",
+                "type": "string"
+              },
+              "rightValue": "opened"
+            }
+          ],
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          }
+        },
+        "options": {}
+      },
+      "id": "9ee676f0-cd78-4dd5-9495-7405dce05b41",
+      "name": "Только opened",
+      "position": [
+        -1856,
+        640
+      ],
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "7bfe42f1-38cc-4a36-a663-d7cd5a436047",
+              "name": "route",
+              "type": "string",
+              "value": "={{ ['bug','task','feature'].includes($json.type) && Number($json.confidence) >= 0.8 && Number($json.confidence) <= 1 ? $json.type : 'unknown' }}"
+            },
+            {
+              "id": "ca0d446f-cf24-4d1b-85b5-558c74735d21",
+              "name": "type",
+              "type": "string",
+              "value": "={{ $json.type }}"
+            },
+            {
+              "id": "e77e4b4e-a1cc-4576-ab71-65a72f782e17",
+              "name": "confidence",
+              "type": "number",
+              "value": "={{ Number($json.confidence) }}"
+            },
+            {
+              "id": "746f76a4-32f8-4d18-b864-ff7843d67f72",
+              "name": "number",
+              "type": "number",
+              "value": "={{ $('Github Trigger').first().json.body.issue.number }}"
+            },
+            {
+              "id": "2cc79d03-a3a7-452f-a3a3-eaf9ef68c6c5",
+              "name": "login",
+              "type": "string",
+              "value": "={{ $('Github Trigger').first().json.body.issue.user.login }}"
+            },
+            {
+              "id": "90d08a79-fa8c-41aa-a4b7-2c4e3a1dcd87",
+              "name": "association",
+              "type": "string",
+              "value": "={{ $('Github Trigger').first().json.body.issue.author_association }}"
+            },
+            {
+              "id": "6c0d707b-fa91-4efe-abe4-e897c086bbf7",
+              "name": "owner",
+              "type": "string",
+              "value": "={{ $('Github Trigger').first().json.body.repository.owner.login }}"
+            },
+            {
+              "id": "d8da5b32-6460-4b16-bbad-0bedf07ec829",
+              "name": "repo",
+              "type": "string",
+              "value": "={{ $('Github Trigger').first().json.body.repository.name }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "3f827345-42cc-4325-a772-531147107353",
+      "name": "Маршрут",
+      "position": [
+        -1120,
+        336
+      ],
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "d1ac8af8-2fac-4b2f-bd93-46f83db41fdf",
+                    "leftValue": "={{ $json.route }}",
+                    "operator": {
+                      "operation": "equals",
+                      "type": "string"
+                    },
+                    "rightValue": "bug"
+                  }
+                ],
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                }
+              },
+              "renameOutput": true,
+              "outputKey": "bug"
+            },
+            {
+              "conditions": {
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "41fcc199-d8a1-4b3d-b4cf-ced730636343",
+                    "leftValue": "={{ $json.route }}",
+                    "operator": {
+                      "operation": "equals",
+                      "type": "string"
+                    },
+                    "rightValue": "task"
+                  }
+                ],
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                }
+              },
+              "renameOutput": true,
+              "outputKey": "task"
+            },
+            {
+              "conditions": {
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "1ef6e156-ef2c-4af2-a31c-b3fc9b517896",
+                    "leftValue": "={{ $json.route }}",
+                    "operator": {
+                      "operation": "equals",
+                      "type": "string"
+                    },
+                    "rightValue": "feature"
+                  }
+                ],
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                }
+              },
+              "renameOutput": true,
+              "outputKey": "feature"
+            },
+            {
+              "conditions": {
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "8255ec61-625e-45f0-9cd6-acb1e51cc0fa",
+                    "leftValue": "={{ $json.route }}",
+                    "operator": {
+                      "operation": "equals",
+                      "type": "string"
+                    },
+                    "rightValue": "unknown"
+                  }
+                ],
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                }
+              },
+              "renameOutput": true,
+              "outputKey": "unknown"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "b6914209-17ed-4c04-ae61-8fe874bbd5c2",
+      "name": "Switch по типу",
+      "position": [
+        -880,
+        336
+      ],
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.github.com/repos/{{ $('Маршрут').first().json.owner }}/{{ $('Маршрут').first().json.repo }}/issues/{{ $('Маршрут').first().json.number }}/labels",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "githubApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/vnd.github+json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"labels\": [\"bug\"]}",
+        "options": {}
+      },
+      "id": "23f94798-273e-47ee-8298-fb86814a1d8b",
+      "name": "Лейбл bug",
+      "position": [
+        -624,
+        -32
+      ],
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.github.com/repos/{{ $('Маршрут').first().json.owner }}/{{ $('Маршрут').first().json.repo }}/issues/{{ $('Маршрут').first().json.number }}/labels",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "githubApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/vnd.github+json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"labels\": [\"task\"]}",
+        "options": {}
+      },
+      "id": "3a9c5452-d4dd-42be-9d85-da0e01ddbccc",
+      "name": "Лейбл task",
+      "position": [
+        -624,
+        208
+      ],
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.github.com/repos/{{ $('Маршрут').first().json.owner }}/{{ $('Маршрут').first().json.repo }}/issues/{{ $('Маршрут').first().json.number }}/labels",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "githubApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/vnd.github+json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"labels\": [\"feature-request\"]}",
+        "options": {}
+      },
+      "id": "e69f6271-7180-4f07-8025-8e9aa0512259",
+      "name": "Лейбл feature-request",
+      "position": [
+        -624,
+        448
+      ],
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.github.com/repos/{{ $('Маршрут').first().json.owner }}/{{ $('Маршрут').first().json.repo }}/issues/{{ $('Маршрут').first().json.number }}/labels",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "githubApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/vnd.github+json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"labels\": [\"needs-triage\"]}",
+        "options": {}
+      },
+      "id": "ede896a7-a6cf-426e-94a7-6b68bc9c4716",
+      "name": "Лейбл needs-triage",
+      "position": [
+        -624,
+        688
+      ],
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.github.com/repos/{{ $('Маршрут').first().json.owner }}/{{ $('Маршрут').first().json.repo }}/issues/{{ $('Маршрут').first().json.number }}/comments",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "githubApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/vnd.github+json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ body: 'Спасибо за сообщение об ошибке! Если ещё не указали, добавьте шаги воспроизведения, ожидаемое и фактическое поведение, версии приложения и эмулятора.' }) }}",
+        "options": {}
+      },
+      "id": "c39586fd-7a91-4aae-b794-ea269c037c79",
+      "name": "Ответ bug",
+      "position": [
+        -384,
+        -32
+      ],
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.github.com/repos/{{ $('Маршрут').first().json.owner }}/{{ $('Маршрут').first().json.repo }}/issues/{{ $('Маршрут').first().json.number }}/comments",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "githubApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/vnd.github+json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ body: 'Спасибо за обращение! Если это вопрос, посмотрите README. Если ответа там нет, уточните, что уже пробовали. Если это задача по проекту, мейнтейнер рассмотрит её здесь.' }) }}",
+        "options": {}
+      },
+      "id": "386d838f-337d-4438-938b-585d4bc64186",
+      "name": "Ответ task",
+      "position": [
+        -384,
+        208
+      ],
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.github.com/repos/{{ $('Маршрут').first().json.owner }}/{{ $('Маршрут').first().json.repo }}/issues/{{ $('Маршрут').first().json.number }}/comments",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "githubApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/vnd.github+json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ body: 'Спасибо за идею! Мы добавили её в список запросов. Расскажите, пожалуйста, какую задачу она решает — это поможет с приоритетом.' }) }}",
+        "options": {}
+      },
+      "id": "b73d4ffa-1604-4162-a94e-976e450e17d3",
+      "name": "Ответ feature",
+      "position": [
+        -384,
+        448
+      ],
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "23dcf0fd-c9ab-4bf7-bce1-7a470dc304b2",
+              "leftValue": "={{ $('Маршрут').first().json.association ?? '' }}",
+              "operator": {
+                "operation": "equals",
+                "type": "string"
+              },
+              "rightValue": "NONE"
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "dbaf5af5-ee15-47df-89ea-c3338d8a6797",
+      "name": "Новичок? (NONE)",
+      "position": [
+        -144,
+        336
+      ],
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.github.com/repos/{{ $('Маршрут').first().json.owner }}/{{ $('Маршрут').first().json.repo }}/issues/{{ $('Маршрут').first().json.number }}/labels",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "githubApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/vnd.github+json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"labels\": [\"first-time-contributor\"]}",
+        "options": {}
+      },
+      "id": "4ca45b8a-0908-4713-9487-f4bb5ec804aa",
+      "name": "Лейбл first-time-contributor",
+      "position": [
+        96,
+        240
+      ],
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.github.com/repos/{{ $('Маршрут').first().json.owner }}/{{ $('Маршрут').first().json.repo }}/issues/{{ $('Маршрут').first().json.number }}/comments",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "githubApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/vnd.github+json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ body: 'Привет, @' + $('Маршрут').first().json.login + '! Спасибо за ваш первый Issue. Пожалуйста, описывайте вопрос как можно конкретнее. Если что-то не работает, укажите шаги воспроизведения, ожидаемый и фактический результат. Если предлагаете новую возможность, расскажите, какую задачу она поможет решить. Не публикуйте пароли и токены. Если понадобятся уточнения, мы спросим здесь.' }) }}",
+        "options": {}
+      },
+      "id": "2c28d558-7cad-45d3-af5f-d7eaaedc147c",
+      "name": "Приветствие",
+      "position": [
+        592,
+        240
+      ],
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2
+    },
+    {
+      "parameters": {
+        "operation": "rowNotExists",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "name",
+          "value": "processed_issues"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "issue_id",
+              "keyValue": "={{ Number($json.body.issue.id) }}"
+            }
+          ]
+        }
+      },
+      "id": "29f26d5c-a786-479f-ad11-2f5dfa38863b",
+      "name": "Issue ещё не обработан",
+      "position": [
+        -1632,
+        336
+      ],
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "cachedResultName": "sub_ai_issue_classificator",
+          "cachedResultUrl": "/workflow/mSm9xh9zlDyh2TAH",
+          "mode": "list",
+          "value": "mSm9xh9zlDyh2TAH"
+        },
+        "workflowInputs": {
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true,
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "schema": [
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "title",
+              "id": "title",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "body",
+              "id": "body",
+              "required": false,
+              "type": "string"
+            }
+          ],
+          "value": {
+            "body": "={{ $('Github Trigger').first().json.body.issue.body ?? '' }}",
+            "title": "={{ $('Github Trigger').first().json.body.issue.title ?? '' }}"
+          }
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "id": "dfafdc91-4af2-4755-8f28-cf9c095342cd",
+      "name": "Вызвать sub_ai_issue_classificator",
+      "position": [
+        -1376,
+        336
+      ],
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2
+    },
+    {
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "mode": "name",
+          "value": "processed_issues"
+        },
+        "columns": {
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false,
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "schema": [
+            {
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "issue_id",
+              "id": "issue_id",
+              "readOnly": false,
+              "removed": false,
+              "required": false,
+              "type": "number"
+            },
+            {
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "author",
+              "id": "author",
+              "readOnly": false,
+              "removed": false,
+              "required": false,
+              "type": "string"
+            },
+            {
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "created_at",
+              "id": "created_at",
+              "readOnly": false,
+              "removed": false,
+              "required": false,
+              "type": "dateTime"
+            }
+          ],
+          "value": {
+            "author": "={{ $('Github Trigger').first().json.body.issue.user.login }}",
+            "created_at": "={{ $('Github Trigger').first().json.body.issue.created_at }}",
+            "issue_id": "={{ Number($('Github Trigger').first().json.body.issue.id) }}"
+          }
+        },
+        "options": {}
+      },
+      "id": "25bf7200-16d1-4511-992e-e242882ff3b6",
+      "name": "Записать обработанный Issue",
+      "position": [
+        848,
+        448
+      ],
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1
+    }
+  ],
+  "connections": {
+    "Github Trigger": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Только opened",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Только opened": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Issue ещё не обработан",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Маршрут": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Switch по типу",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Switch по типу": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Лейбл bug",
+            "type": "main"
+          }
+        ],
+        [
+          {
+            "index": 0,
+            "node": "Лейбл task",
+            "type": "main"
+          }
+        ],
+        [
+          {
+            "index": 0,
+            "node": "Лейбл feature-request",
+            "type": "main"
+          }
+        ],
+        [
+          {
+            "index": 0,
+            "node": "Лейбл needs-triage",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Лейбл bug": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Ответ bug",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Лейбл task": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Ответ task",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Лейбл feature-request": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Ответ feature",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Лейбл needs-triage": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Новичок? (NONE)",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Ответ bug": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Новичок? (NONE)",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Ответ task": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Новичок? (NONE)",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Ответ feature": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Новичок? (NONE)",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Новичок? (NONE)": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Лейбл first-time-contributor",
+            "type": "main"
+          }
+        ],
+        [
+          {
+            "index": 0,
+            "node": "Записать обработанный Issue",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Лейбл first-time-contributor": {
+      "main": [
+        [
+          {
+            "node": "Приветствие",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Приветствие": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Записать обработанный Issue",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Issue ещё не обработан": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Вызвать sub_ai_issue_classificator",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Вызвать sub_ai_issue_classificator": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Маршрут",
+            "type": "main"
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "active": false
+}

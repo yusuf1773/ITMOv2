@@ -1,0 +1,507 @@
+{
+  "name": "7.2 WF2 - sub_issue_statistics",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "owner"
+            },
+            {
+              "name": "repo"
+            }
+          ]
+        }
+      },
+      "id": "313ca65e-c3ad-4b32-a17c-8fb92d5247ab",
+      "name": "Вход: owner и repo",
+      "position": [
+        8752,
+        -736
+      ],
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1
+    },
+    {
+      "parameters": {
+        "jsCode": "const config = $input.first().json;\nconst owner = typeof config.owner === 'string' ? config.owner.trim() : '';\nconst repo = typeof config.repo === 'string' ? config.repo.trim() : '';\nif (!/^[A-Za-z0-9-]+$/.test(owner) || !/^[A-Za-z0-9_.-]+$/.test(repo) || repo === '.' || repo === '..') {\n  throw new Error('Укажите отдельные имена owner и repo');\n}\nreturn [{json: {owner, repo}}];"
+      },
+      "id": "c3dc01ba-0d64-4559-9443-2bb54caca7a8",
+      "name": "Проверить owner и repo",
+      "position": [
+        8992,
+        -736
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "url": "={{ 'https://api.github.com/repos/' + $json.owner + '/' + $json.repo }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "githubApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/vnd.github+json"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true,
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "fde32b3b-31e2-411f-a6e2-30f30377b9f4",
+      "name": "Проверить репозиторий на GitHub",
+      "position": [
+        9232,
+        -736
+      ],
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2
+    },
+    {
+      "parameters": {
+        "jsCode": "const response = $input.first().json;\nconst status = response.statusCode;\nif (status === 404) {\n  throw new Error('Репозиторий не найден или недоступен с текущими GitHub credentials');\n}\nif (status === 401 || status === 403 || status === 429) {\n  throw new Error('GitHub отклонил проверку репозитория (HTTP ' + status + '). Проверьте credentials, права и лимит запросов');\n}\nconst repository = response.body?.full_name;\nif (status !== 200 || typeof repository !== 'string' || !/^[A-Za-z0-9-]+\\/[A-Za-z0-9_.-]+$/.test(repository)) {\n  throw new Error('GitHub не подтвердил репозиторий (HTTP ' + status + ')');\n}\nconst end = $now.setZone('Europe/Moscow').startOf('second');\nconst start = end.minus({ hours: 168 });\nconst from = start.toUTC().toISO({ suppressMilliseconds: true });\nconst through = end.minus({ seconds: 1 }).toUTC().toISO({ suppressMilliseconds: true });\nconst range = from + '..' + through;\nconst base = 'repo:' + repository + ' is:issue ';\nreturn [{json: {\n  repository,\n  from: start.toISO(), to: end.toISO(),\n  queries: {\n    created: base + 'created:' + range,\n    closed: base + 'closed:' + range,\n    updated: base + 'updated:' + range,\n    triage: base + 'created:' + range + ' label:needs-triage',\n  }\n}}];"
+      },
+      "id": "0975c658-8f90-4f63-a3e5-43a8b3c0ba6d",
+      "name": "Период последних 7 суток",
+      "position": [
+        9472,
+        -736
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "url": "https://api.github.com/search/issues",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "githubApi",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "={{ $('Период последних 7 суток').first().json.queries.created }}"
+            },
+            {
+              "name": "per_page",
+              "value": "100"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/vnd.github+json"
+            }
+          ]
+        },
+        "options": {
+          "pagination": {
+            "pagination": {
+              "parameters": {
+                "parameters": [
+                  {
+                    "name": "page",
+                    "value": "={{ $pageCount + 1 }}"
+                  }
+                ]
+              },
+              "paginationCompleteWhen": "other",
+              "completeExpression": "={{ !/<[^>]+>;\\s*rel=\"next\"/.test($response.headers.link ?? '') }}",
+              "limitPagesFetched": true,
+              "maxRequests": 10
+            }
+          }
+        }
+      },
+      "id": "70aaca5f-bd5d-4036-a44e-dc23b3cd4fd3",
+      "name": "Созданные за неделю",
+      "position": [
+        9744,
+        -736
+      ],
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2
+    },
+    {
+      "parameters": {
+        "jsCode": "const pages = $input.all().map(item => item.json);\nif (pages.length === 0) throw new Error('GitHub did not return a response');\nif (pages.some(page => page.incomplete_results)) {\n  throw new Error('GitHub returned incomplete search results');\n}\nconst count = pages[0].total_count;\nconst issues = pages.flatMap(page => page.items ?? []);\nif (!Number.isInteger(count) || count > 1000 || issues.length !== count) {\n  throw new Error('GitHub search was truncated: ' + issues.length + '/' + count);\n}\nreturn [{json: {count, issues}}];"
+      },
+      "id": "0eeb1367-7ba5-4f9e-9c0d-309d45ada595",
+      "name": "Собрать созданные",
+      "position": [
+        9984,
+        -736
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "url": "https://api.github.com/search/issues",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "githubApi",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "={{ $('Период последних 7 суток').first().json.queries.closed }}"
+            },
+            {
+              "name": "per_page",
+              "value": "100"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/vnd.github+json"
+            }
+          ]
+        },
+        "options": {
+          "pagination": {
+            "pagination": {
+              "parameters": {
+                "parameters": [
+                  {
+                    "name": "page",
+                    "value": "={{ $pageCount + 1 }}"
+                  }
+                ]
+              },
+              "paginationCompleteWhen": "other",
+              "completeExpression": "={{ !/<[^>]+>;\\s*rel=\"next\"/.test($response.headers.link ?? '') }}",
+              "limitPagesFetched": true,
+              "maxRequests": 10
+            }
+          }
+        }
+      },
+      "id": "6ae6612f-145b-4f0d-8c38-014eb4ee94a6",
+      "name": "Закрытые за неделю",
+      "position": [
+        10224,
+        -736
+      ],
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2
+    },
+    {
+      "parameters": {
+        "jsCode": "const pages = $input.all().map(item => item.json);\nif (pages.length === 0) throw new Error('GitHub did not return a response');\nif (pages.some(page => page.incomplete_results)) {\n  throw new Error('GitHub returned incomplete search results');\n}\nconst count = pages[0].total_count;\nconst issues = pages.flatMap(page => page.items ?? []);\nif (!Number.isInteger(count) || count > 1000 || issues.length !== count) {\n  throw new Error('GitHub search was truncated: ' + issues.length + '/' + count);\n}\nreturn [{json: {count, issues}}];"
+      },
+      "id": "d824fe1e-47ea-4254-8c58-605f976a5aca",
+      "name": "Собрать закрытые",
+      "position": [
+        10464,
+        -736
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "url": "https://api.github.com/search/issues",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "githubApi",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "={{ $('Период последних 7 суток').first().json.queries.updated }}"
+            },
+            {
+              "name": "per_page",
+              "value": "100"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/vnd.github+json"
+            }
+          ]
+        },
+        "options": {
+          "pagination": {
+            "pagination": {
+              "parameters": {
+                "parameters": [
+                  {
+                    "name": "page",
+                    "value": "={{ $pageCount + 1 }}"
+                  }
+                ]
+              },
+              "paginationCompleteWhen": "other",
+              "completeExpression": "={{ !/<[^>]+>;\\s*rel=\"next\"/.test($response.headers.link ?? '') }}",
+              "limitPagesFetched": true,
+              "maxRequests": 10
+            }
+          }
+        }
+      },
+      "id": "91e3042e-a6df-448c-9952-37fd9a09e338",
+      "name": "Обновлённые за неделю",
+      "position": [
+        10704,
+        -736
+      ],
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2
+    },
+    {
+      "parameters": {
+        "jsCode": "const pages = $input.all().map(item => item.json);\nif (pages.length === 0) throw new Error('GitHub did not return a response');\nif (pages.some(page => page.incomplete_results)) {\n  throw new Error('GitHub returned incomplete search results');\n}\nconst count = pages[0].total_count;\nconst issues = pages.flatMap(page => page.items ?? []);\nif (!Number.isInteger(count) || count > 1000 || issues.length !== count) {\n  throw new Error('GitHub search was truncated: ' + issues.length + '/' + count);\n}\nreturn [{json: {count, issues}}];"
+      },
+      "id": "8413c2fb-4120-47c0-8017-aae9d2076b05",
+      "name": "Собрать обновлённые",
+      "position": [
+        10944,
+        -736
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "url": "https://api.github.com/search/issues",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "githubApi",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "={{ $('Период последних 7 суток').first().json.queries.triage }}"
+            },
+            {
+              "name": "per_page",
+              "value": "100"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/vnd.github+json"
+            }
+          ]
+        },
+        "options": {
+          "pagination": {
+            "pagination": {
+              "parameters": {
+                "parameters": [
+                  {
+                    "name": "page",
+                    "value": "={{ $pageCount + 1 }}"
+                  }
+                ]
+              },
+              "paginationCompleteWhen": "other",
+              "completeExpression": "={{ !/<[^>]+>;\\s*rel=\"next\"/.test($response.headers.link ?? '') }}",
+              "limitPagesFetched": true,
+              "maxRequests": 10
+            }
+          }
+        }
+      },
+      "id": "cd709a98-0e0b-43e1-878e-4a69923abfa8",
+      "name": "Новые needs-triage",
+      "position": [
+        11184,
+        -736
+      ],
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2
+    },
+    {
+      "parameters": {
+        "jsCode": "const pages = $input.all().map(item => item.json);\nif (pages.length === 0) throw new Error('GitHub did not return a response');\nif (pages.some(page => page.incomplete_results)) {\n  throw new Error('GitHub returned incomplete search results');\n}\nconst count = pages[0].total_count;\nconst issues = pages.flatMap(page => page.items ?? []);\nif (!Number.isInteger(count) || count > 1000 || issues.length !== count) {\n  throw new Error('GitHub search was truncated: ' + issues.length + '/' + count);\n}\nreturn [{json: {count, issues}}];"
+      },
+      "id": "9d3e3c3b-9c32-4b05-856c-08b210bd6fa1",
+      "name": "Собрать needs-triage",
+      "position": [
+        11424,
+        -736
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "jsCode": "const period = $('Период последних 7 суток').first().json;\nconst created = $('Собрать созданные').first().json;\nconst closed = $('Собрать закрытые').first().json;\nconst updated = $('Собрать обновлённые').first().json;\nconst triage = $('Собрать needs-triage').first().json;\nconst from = new Date(period.from);\nconst to = new Date(period.to);\nconst labels = ['needs-triage', 'bug', 'task', 'feature-request'];\nconst groups = new Map();\nconst inPeriod = (issues, field) => issues.filter(issue => {\n  const timestamp = Date.parse(issue[field]);\n  return !issue.pull_request && timestamp >= from.getTime() && timestamp < to.getTime();\n});\nconst newIssues = inPeriod(created.issues, 'created_at');\nfor (const issue of newIssues) {\n  const names = new Set((issue.labels ?? []).map(label =>\n    typeof label === 'string' ? label : label.name\n  ));\n  const type = labels.find(name => names.has(name)) ?? 'без типа';\n  const author = issue.user?.login ?? 'неизвестен';\n  const key = JSON.stringify([type, author]);\n  groups.set(key, (groups.get(key) ?? 0) + 1);\n}\nconst rows = [...groups]\n  .map(([key, count]) => [...JSON.parse(key), count])\n  .sort((a, b) => a[0].localeCompare(b[0]) || a[1].localeCompare(b[1]));\nconst date = value => new Intl.DateTimeFormat('ru-RU', {\n  timeZone: 'Europe/Moscow', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23'\n}).format(new Date(value));\nconst periodText = date(from) + ' — ' + date(to) + ' (МСК)';\nreturn [{json: {\n  repository: period.repository,\n  period: {from: period.from, to: period.to, text: periodText},\n  counts: {\n    created: newIssues.length,\n    closed: inPeriod(closed.issues, 'closed_at').length,\n    updated: inPeriod(updated.issues, 'updated_at').length,\n    needsTriage: inPeriod(triage.issues, 'created_at').length,\n  },\n  rows: rows.map(([type, author, count]) => ({type, author, count})),\n}}];"
+      },
+      "id": "7d27598e-6082-4911-9f8b-8046e382d75a",
+      "name": "Группировать по типу и автору",
+      "position": [
+        11664,
+        -736
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    }
+  ],
+  "connections": {
+    "Вход: owner и repo": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Проверить owner и repo",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Проверить owner и repo": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Проверить репозиторий на GitHub",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Проверить репозиторий на GitHub": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Период последних 7 суток",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Период последних 7 суток": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Созданные за неделю",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Созданные за неделю": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Собрать созданные",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Собрать созданные": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Закрытые за неделю",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Закрытые за неделю": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Собрать закрытые",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Собрать закрытые": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Обновлённые за неделю",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Обновлённые за неделю": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Собрать обновлённые",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Собрать обновлённые": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Новые needs-triage",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Новые needs-triage": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Собрать needs-triage",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Собрать needs-triage": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Группировать по типу и автору",
+            "type": "main"
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "active": false
+}
